@@ -119,8 +119,8 @@ public class ClientUtils {
         double healthGain = action.getValues().getHealth().doubleValue();
         double crewGain = action.getValues().getCrew().doubleValue();
 
-        score += healthGain;
-        score += crewGain;
+        score += healthGain * 1.2;  // Increase weighting for health gain
+        score += crewGain * 1.2;    // Increase weighting for crew gain
 
         // Negative side effects
         double maxHealthChange = action.getValues().getMaxHealth().doubleValue();
@@ -128,18 +128,33 @@ public class ClientUtils {
 
         // Penalize actions that reduce maxHealth or maxCrew
         if (maxHealthChange < 0) {
-            score += maxHealthChange * 2; // Heavier penalty
+            score += maxHealthChange * 3; // Heavier penalty to discourage reducing max health
         }
         if (maxCrewChange < 0) {
-            score += maxCrewChange * 2; // Heavier penalty
+            score += maxCrewChange * 3; // Heavier penalty to discourage reducing max crew
         }
 
         // Optional: Penalize actions that decrease current health or crew
         if (action.getValues().getHealth().doubleValue() < 0) {
-            score += action.getValues().getHealth().doubleValue() * 1.5; // Mild penalty
+            score += action.getValues().getHealth().doubleValue() * 2.0; // Higher penalty for direct health reduction
         }
         if (action.getValues().getCrew().doubleValue() < 0) {
-            score += action.getValues().getCrew().doubleValue() * 1.5; // Mild penalty
+            score += action.getValues().getCrew().doubleValue() * 2.0; // Higher penalty for direct crew reduction
+        }
+
+        // Trade-off logic: Encourage trading health if crew loss is less critical and vice versa
+        if (totalHealthLoss > totalCrewLoss) {
+            score += crewGain * 1.5; // Prefer actions that increase crew when health is more critical
+        } else {
+            score += healthGain * 1.5; // Prefer actions that increase health when crew is more critical
+        }
+
+        // Introduce prioritization for increasing maximum values if they are too low
+        if (action.getValues().getMaxHealth().doubleValue() > 0) {
+            score += action.getValues().getMaxHealth().doubleValue() * 1.8; // Prioritize increasing max health
+        }
+        if (action.getValues().getMaxCrew().doubleValue() > 0) {
+            score += action.getValues().getMaxCrew().doubleValue() * 1.8; // Prioritize increasing max crew
         }
 
         return score;
