@@ -70,26 +70,28 @@ public class ClientUtils {
         return effects.stream().map(GameRoundServerMessage.Effect::getValues).collect(Collectors.toList());
     }
 
-    public static List<Long> getActionToExecuteBasedOnEffect(List<Values> effects, GameRoundServerMessage.Action action) {
-        List<Long> actionsToBeExecuted = new ArrayList<>(); // Use a mutable list
-        // Loop over the effects
-        for (Values effect : effects) {
-            // Check if the effect is negative
-            if (effect.getHealth().intValue() < 0) {
-                // Check if the action can repair health
-                if (action.getValues().getHealth().intValue() > 0) {
-                    // Add the action to the list of actions to be executed
-                    actionsToBeExecuted.add(action.getId());
-                }
-            } else if (effect.getCrew().intValue() < 0) {
-                // Check if the action can recruit crew
-                if (action.getValues().getCrew().intValue() > 0) {
-                    // Add the action to the list of actions to be executed
-                    actionsToBeExecuted.add(action.getId());
-                }
-            }
-        }
-        return actionsToBeExecuted;
+    public static List<Long> getActionToExecuteBasedOnEffect(List<Values> effects, List<Long> actionsToBeExecuted, GameRoundServerMessage.Action action) {
+        // Calculate the cumulative negative effects
+        BigDecimal totalHealthLoss = effects.stream()
+                .map(Values::getHealth)
+                .filter(health -> health.compareTo(ZERO) < 0)
+                .reduce(ZERO, BigDecimal::add);
 
+        BigDecimal totalCrewLoss = effects.stream()
+                .map(Values::getCrew)
+                .filter(crew -> crew.compareTo(ZERO) < 0)
+                .reduce(ZERO, BigDecimal::add);
+
+        // If there is any health loss, check if the action can repair health
+        if (totalHealthLoss.compareTo(ZERO) < 0 && action.getValues().getHealth().compareTo(ZERO) > 0) {
+            actionsToBeExecuted.add(action.getId());
+        }
+
+        // If there is any crew loss, check if the action can recruit crew
+        if (totalCrewLoss.compareTo(ZERO) < 0 && action.getValues().getCrew().compareTo(ZERO) > 0) {
+            actionsToBeExecuted.add(action.getId());
+        }
+
+        return actionsToBeExecuted;
     }
 }
