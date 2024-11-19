@@ -85,8 +85,8 @@ public class ClientUtils {
     }
 
 
-    public static List<Values> getAllActionValues(List<GameRoundServerMessage.Action> actions) {
-        return actions.stream().map(GameRoundServerMessage.Action::getValues).collect(Collectors.toList());
+    public static Values getAllActionValues(GameRoundServerMessage.Action action) {
+        return action.getValues();
     }
 
     public static List<Values> getAllEffectValues(List<GameRoundServerMessage.Effect> effects) {
