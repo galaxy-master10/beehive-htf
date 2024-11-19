@@ -9,6 +9,7 @@ import be.thebeehive.htf.library.protocol.server.GameRoundServerMessage;
 import be.thebeehive.htf.library.protocol.server.WarningServerMessage;
 
 import java.util.Collections;
+import java.util.List;
 
 public class MyClient implements HtfClientListener {
 
@@ -36,6 +37,16 @@ public class MyClient implements HtfClientListener {
      */
     @Override
     public void onGameRoundServerMessage(HtfClient client, GameRoundServerMessage msg) throws Exception {
+        // actions
+        List<GameRoundServerMessage.Values> valuesActions = ClientUtils.getAllActionValues(msg.getActions());
+        System.out.println("Actions");
+        valuesActions.stream().map(GameRoundServerMessage.Values::toString).forEach(System.out::println);
+
+        // effects
+        List<GameRoundServerMessage.Values> valueEffects = ClientUtils.getAllEffectValues(msg.getEffects());
+        System.out.println("Effects");
+        valueEffects.stream().map(GameRoundServerMessage.Values::toString).forEach(System.out::println);
+
         client.send(new SelectActionsClientMessage(msg.getRoundId(), Collections.emptyList()));
     }
 

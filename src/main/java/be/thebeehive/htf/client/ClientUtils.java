@@ -1,8 +1,11 @@
 package be.thebeehive.htf.client;
 
+import be.thebeehive.htf.library.protocol.server.GameRoundServerMessage;
 import be.thebeehive.htf.library.protocol.server.GameRoundServerMessage.Values;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.math.BigDecimal.ZERO;
 
@@ -80,4 +83,14 @@ public class ClientUtils {
     public static boolean isAlive(Values values) {
         return !isDead(values);
     }
+
+
+    public static List<Values> getAllActionValues(List<GameRoundServerMessage.Action> actions) {
+        return actions.stream().map(GameRoundServerMessage.Action::getValues).collect(Collectors.toList());
+    }
+
+    public static List<Values> getAllEffectValues(List<GameRoundServerMessage.Effect> effects) {
+        return effects.stream().map(GameRoundServerMessage.Effect::getValues).collect(Collectors.toList());
+    }
+
 }

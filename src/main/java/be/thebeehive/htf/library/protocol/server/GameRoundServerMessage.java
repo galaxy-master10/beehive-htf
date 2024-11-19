@@ -270,6 +270,15 @@ public class GameRoundServerMessage extends ServerMessage {
         public void setValues(Values values) {
             this.values = values;
         }
+
+        @Override
+        public String toString() {
+            return "Effect{" +
+                    "id=" + id +
+                    ", step=" + step +
+                    ", values=" + values +
+                    '}';
+        }
     }
 
     /**
@@ -341,6 +350,15 @@ public class GameRoundServerMessage extends ServerMessage {
         public void setValues(Values values) {
             this.values = values;
         }
+
+        @Override
+        public String toString() {
+            return "Action{" +
+                    "id=" + id +
+                    ", effectId=" + effectId +
+                    ", values=" + values +
+                    '}';
+        }
     }
 
     /**
@@ -410,6 +428,15 @@ public class GameRoundServerMessage extends ServerMessage {
          */
         public void setAlive(boolean alive) {
             this.alive = alive;
+        }
+
+        @Override
+        public String toString() {
+            return "Spaceship{" +
+                    "name='" + name + '\'' +
+                    ", values=" + values +
+                    ", alive=" + alive +
+                    '}';
         }
     }
 
@@ -498,6 +525,16 @@ public class GameRoundServerMessage extends ServerMessage {
          */
         public void setMaxCrew(BigDecimal maxCrew) {
             this.maxCrew = maxCrew;
+        }
+
+        @Override
+        public String toString() {
+            return "Values{" +
+                    "health=" + health +
+                    ", maxHealth=" + maxHealth +
+                    ", crew=" + crew +
+                    ", maxCrew=" + maxCrew +
+                    '}';
         }
     }
 }
