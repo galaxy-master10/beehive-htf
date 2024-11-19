@@ -4,6 +4,8 @@ import be.thebeehive.htf.library.protocol.server.GameRoundServerMessage;
 import be.thebeehive.htf.library.protocol.server.GameRoundServerMessage.Values;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,26 +70,26 @@ public class ClientUtils {
         return effects.stream().map(GameRoundServerMessage.Effect::getValues).collect(Collectors.toList());
     }
 
-    public static List<Long> getActionToExecuteBasedOnEffect(List<Values> effects, List<Long> actionsToBeExecuted, GameRoundServerMessage.Action action) {
-        // loop over the effects
+    public static List<Long> getActionToExecuteBasedOnEffect(List<Values> effects, GameRoundServerMessage.Action action) {
+        List<Long> actionsToBeExecuted = new ArrayList<>(); // Use a mutable list
+        // Loop over the effects
         for (Values effect : effects) {
-            // check if the effect is negative
-            if (effect.getHealth().compareTo(ZERO) < 0) {
-                // check if the action can repair health
-                if (action.getValues().getHealth().compareTo(ZERO) > 0) {
-                    // add the action to the list of actions to be executed
+            // Check if the effect is negative
+            if (effect.getHealth().intValue() < 0) {
+                // Check if the action can repair health
+                if (action.getValues().getHealth().intValue() > 0) {
+                    // Add the action to the list of actions to be executed
                     actionsToBeExecuted.add(action.getId());
-                    break;
                 }
-            } else if (effect.getCrew().compareTo(ZERO) < 0) {
-                // check if the action can recruit crew
-                if (action.getValues().getCrew().compareTo(ZERO) > 0) {
-                    // add the action to the list of actions to be executed
+            } else if (effect.getCrew().intValue() < 0) {
+                // Check if the action can recruit crew
+                if (action.getValues().getCrew().intValue() > 0) {
+                    // Add the action to the list of actions to be executed
                     actionsToBeExecuted.add(action.getId());
-                    break;
                 }
             }
         }
-        return actionsToBeExecuted; // Add this return statement
+        return actionsToBeExecuted;
+
     }
 }

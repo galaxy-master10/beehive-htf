@@ -9,8 +9,10 @@ import be.thebeehive.htf.library.protocol.server.GameRoundServerMessage;
 import be.thebeehive.htf.library.protocol.server.WarningServerMessage;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 public class MyClient implements HtfClientListener {
 
@@ -21,7 +23,7 @@ public class MyClient implements HtfClientListener {
      */
     @Override
     public void onErrorServerMessage(HtfClient client, ErrorServerMessage msg) throws Exception {
-
+        System.out.println(msg.getMsg());
     }
 
     /**
@@ -53,51 +55,73 @@ public class MyClient implements HtfClientListener {
         System.out.println("Effects:");
         valueEffects.stream().map(GameRoundServerMessage.Values::toString).forEach(System.out::println);
 
-        // Determine the cumulative negative effects
-        BigDecimal healthLoss = new BigDecimal(0);
-        BigDecimal healthMaxLoss = new BigDecimal(0);
-        BigDecimal crewloss = new BigDecimal(0);
-        BigDecimal crewMaxLoss = new BigDecimal(0);
-        for (GameRoundServerMessage.Values effect : valueEffects) {
-            healthLoss.add(effect.getHealth());
-            healthMaxLoss.add(effect.getMaxHealth());
-            crewloss.add(effect.getCrew());
-            crewMaxLoss.add(effect.getMaxCrew());
-        }
-
-        System.out.println("Expected health loss: " + healthLoss);
-        System.out.println("Expected max health loss: " + healthMaxLoss);
-        System.out.println("Expected crew loss: " + crewloss);
-        System.out.println("Expected max crew loss: " + crewMaxLoss);
-
-        // 3. Analyze available actions
-        List<GameRoundServerMessage.Action> valuesActions = msg.getActions();
-        System.out.println("Available Actions:");
-        valuesActions.stream().map(GameRoundServerMessage.Action::getValues).map(GameRoundServerMessage.Values::toString).forEach(System.out::println);
-
-        // Prioritize actions
-        for (GameRoundServerMessage.Action action : valuesActions) {
-            // Example: Check if the action can repair health or recruit crew
-            GameRoundServerMessage.Values values = action.getValues();
-            BigDecimal healthGain = values.getHealth();
-            BigDecimal maxHealthGain = values.getMaxHealth();
-            BigDecimal crewGain = values.getCrew();
-            BigDecimal maxCrewGain = values.getMaxCrew();
-
-            // Prioritize actions that address the most severe expected losses
-            if (healthLoss.intValue() > 0 && healthGain.intValue() > 0) {
-                actionsToBeExecuted.add(action.getId()); // Choose an action that heals
-                break;
-            } else if (crewloss.intValue() > 0 && crewGain.intValue() > 0) {
-                actionsToBeExecuted.add(action.getId()); // Choose an action that recruits crew
-                break;
+        if ( valueEffects.isEmpty() ) {
+            if ( maxHealth.compareTo(currentHealth) > 0 ) {
+                actionsToBeExecuted.addAll(getActionsToIncreaseHealth(msg.getActions()));
+            }
+            if ( maxCrew.compareTo(currentCrew) > 0 ) {
+                actionsToBeExecuted.addAll(getActionsToIncreaseCrew(msg.getActions()));
+            }
+            if ( maxHealth.compareTo(currentHealth) == 0 ) {
+                actionsToBeExecuted.addAll(getActionsToIncreaseMaxHealth(msg.getActions()));
+            }
+            if (maxCrew.compareTo(currentCrew) == 0 ) {
+                actionsToBeExecuted.addAll(getActionsToIncreaseMaxCrew(msg.getActions()));
+            }
+        } else {
+            for (GameRoundServerMessage.Action action : msg.getActions()) {
+                actionsToBeExecuted.addAll(ClientUtils.getActionToExecuteBasedOnEffect(valueEffects, action));
             }
         }
+
 
         actionsToBeExecuted.forEach(System.out::println);
 
         client.send(new SelectActionsClientMessage(msg.getRoundId(), actionsToBeExecuted));
     }
+
+    private List<Long> getActionsByCondition(
+            List<GameRoundServerMessage.Action> actions,
+            Function<GameRoundServerMessage.Values, BigDecimal> conditionExtractor) {
+        List<Long> foundActions = new ArrayList<>();
+
+        for (GameRoundServerMessage.Action action : actions) {
+            GameRoundServerMessage.Values values = action.getValues();
+
+            // Compare the extracted BigDecimal value to zero
+            if (conditionExtractor.apply(values).compareTo(BigDecimal.ZERO) > 0) {
+                foundActions.add(action.getId());
+            }
+        }
+
+        return foundActions;
+    }
+
+    private List<Long> getActionsToIncreaseMaxCrew(List<GameRoundServerMessage.Action> actions) {
+        return getActionsByCondition(actions, GameRoundServerMessage.Values::getMaxCrew);
+    }
+
+    private List<Long> getActionsToIncreaseMaxHealth(List<GameRoundServerMessage.Action> actions) {
+        return getActionsByCondition(actions, GameRoundServerMessage.Values::getMaxHealth);
+    }
+
+    private List<Long> getActionsToIncreaseCrew(List<GameRoundServerMessage.Action> actions) {
+        return getActionsByCondition(actions, GameRoundServerMessage.Values::getCrew);
+    }
+
+    private List<Long> getActionsToIncreaseHealth(List<GameRoundServerMessage.Action> actions) {
+        return getActionsByCondition(actions, GameRoundServerMessage.Values::getHealth);
+    }
+
+
+    private BigDecimal checkMaxHealthToHealth(BigDecimal currentHealth, BigDecimal maxHealth) {
+        if (currentHealth == null || maxHealth == null) {
+            throw new IllegalArgumentException("Health values must be non-null.");
+        }
+        // Calculate the difference: maxHealth - currentHealth
+        return maxHealth.subtract(currentHealth);
+    }
+
 
     /**
      * You tried to perform an action that is not allowed.
